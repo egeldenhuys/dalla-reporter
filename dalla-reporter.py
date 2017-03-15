@@ -176,6 +176,8 @@ def loadUsers(userMapFile):
 	macToUserMap = {}
 
 	if (os.path.isfile(userMapFile) == False):
+		print('User map file not found!')
+		exit(-1)
 		return userDict, macToUserMap
 
 	inputFile = open(userMapFile)
@@ -219,6 +221,8 @@ def loadDeviceData(deviceLogDir, start, end):
 	deviceList = []
 
 	if (not os.path.exists(deviceLogDir)):
+		print('Log directory not found!')
+		exit(-1)
 		return deviceList
 
 	fileList = [f for f in listdir(deviceLogDir) if isfile(join(deviceLogDir, f))]
