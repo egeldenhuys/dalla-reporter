@@ -176,7 +176,7 @@ def loadUsers(userMapFile):
 	macToUserMap = {}
 
 	if (os.path.isfile(userMapFile) == False):
-		return userDict
+		return userDict, macToUserMap
 
 	inputFile = open(userMapFile)
 	reader = csv.reader(inputFile, delimiter=',', skipinitialspace=True)
