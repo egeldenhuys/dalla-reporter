@@ -1,6 +1,6 @@
 #!/bin/bash
 
-outputFile=/mnt/dalla-hdd/http/index.html
+outputFile=/mnt/dalla-hdd/dalla-stats/index.html
 deviceLogDir=/mnt/dalla-hdd/dalla-stats/logs
 userMapFile=/mnt/dalla-hdd/dalla-stats/user-map.csv
 
