@@ -27,7 +27,7 @@ def main():
 
 	args = parser.parse_args()
 
-	deviceList = loadDeviceData(args.log_directory, 0, 10000000000000)
+	deviceList = loadDeviceData(args.log_directory, 1490997600, 10000000000000)
 	userDict, deviceToUserDict = loadUsers(args.user_map)
 
 	associateDevicesToUser(deviceList, userDict, deviceToUserDict)
@@ -59,6 +59,7 @@ def sortUsers(userDict):
 	for j in range(0, len(users)):
 		for i in range(0, len(users) - 1):
 			if (users[i].onPeak + users[i].offPeak < users[i + 1].onPeak + users[i + 1].offPeak):
+			#if (users[i].onPeak < users[i + 1].onPeak):
 				# swap
 				tmp = users[i]
 				users[i] = users[i + 1]
@@ -100,12 +101,13 @@ def saveReport(userList, reportFile):
 	overviewFile = open(reportFile, 'w')
 
 
-	overviewFile.write('<!DOCTYPE html>\n<html>\n<head><title>Dalla Stats</title></head>\n<body>\n')
+	overviewFile.write('<!DOCTYPE html>\n<html>\n<head><style>body{font-family:courier, monospace;}</style><title>Dalla Stats</title></head>\n<body>\n')
 
 	overviewFile.write('<h1>' + title + '</h1>\n')
+	# overviewFile.write('<p>Sorted according to highest On-Peak usage</p>\n')
 	# overviewFile.write("<a href=/index.html>Today</a><br>\n<br>\n")
 	# overviewFile.write("<a href=/total.html>Total</a><br>\n")
-	overviewFile.write('<p style="font-family:courier, monospace;">\n')
+	overviewFile.write('<p>\n')
 
 	overviewFile.write('dalla-reporter ' + version + '<br>\n\n')
 
@@ -128,8 +130,8 @@ def saveReport(userList, reportFile):
 			offPerc = round((float(offPeak) / maxOff) * 100, 2)
 
 		overviewFile.write('=======<br>\n' + name + "<br>\n=======<br>\n")
-		overviewFile.write('Total	: ' + str(round(total * scale, points)) + ' ' + scaleStr + '<br>\n')
-		overviewFile.write('On-Peak  : ' + str(round(onPeak * scale, points)) + ' ' + scaleStr)
+		overviewFile.write('Total : ' + str(round(total * scale, points)) + ' ' + scaleStr + '<br>\n')
+		overviewFile.write('On-Peak : ' + str(round(onPeak * scale, points)) + ' ' + scaleStr)
 		overviewFile.write(' (' + str(onPerc) + '%)<br>\n')
 		overviewFile.write('Off-Peak : ' + str(round(offPeak * scale, points)) + ' ' + scaleStr)
 		overviewFile.write(' (' + str(offPerc) + '%)<br>\n<br>\n')
@@ -245,23 +247,24 @@ def loadDeviceData(deviceLogDir, start, end):
 				# 0 = time stamp
 				# 1 = total Bytes
 
+
+
+				local = time.localtime(int(row[0]))
+				delta = int(row[1]) - prevTotalBytes
+
+				if delta < 0:
+					# print('Negative Delta')
+					# print(delta)
+					# print('Correcting to')
+					# print(int(row[1]))
+
+					delta = int(row[1])
+					prevTotalBytes = int(row[1])
+
+				else:
+					prevTotalBytes = int(row[1])
+
 				if int(row[0]) > start and int(row[0]) < end:
-
-					local = time.localtime(int(row[0]))
-					delta = int(row[1]) - prevTotalBytes
-
-					if delta < 0:
-						# print('Negative Delta')
-						# print(delta)
-						# print('Correcting to')
-						# print(int(row[1]))
-
-						delta = int(row[1])
-						prevTotalBytes = int(row[1])
-
-					else:
-						prevTotalBytes = int(row[1])
-
 					if (local.tm_hour < 6):
 						device.offPeak += delta
 					else:
