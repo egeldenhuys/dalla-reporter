@@ -12,7 +12,7 @@ import sys
 import calendar
 
 
-version = 'v0.0.1'
+version = 'v0.0.1+dev'
 
 def main():
 
@@ -20,12 +20,21 @@ def main():
 
 	parser = argparse.ArgumentParser()
 
-	parser.add_argument("-d", "--log-directory", default='', help="Directory containing all device csv")
+	parser.add_argument("-l", "--log-directory", default='', help="Directory containing all device csv")
 	parser.add_argument("-o", "--output-file", default='', help="File to save summary")
 	parser.add_argument("-u", "--user-map", default='', help="user-map.csv")
+	parser.add_argument("-g", "--generate-report", default=False, action='store_true', help="Generate report for single device")
+	parser.add_argument('-d', '--device-macs', default='', required=False, help='comma-separated list of MACs')
+	parser.add_argument('-s', '--start-time', default=-1, type=int, required=False, help='Unix time to start calculations')
+	parser.add_argument('-e', '--end-time', default=-1, type=int, required=False, help='Unix time to end calculations')
 	parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + version)
 
 	args = parser.parse_args()
+
+	if (args.generate_report):
+		printReport(args.log_directory, args.device_macs.split(','), args.start_time, args.end_time)
+		exit(0)
+
 
 	deviceList = loadDeviceData(args.log_directory, 1490997600, 10000000000000)
 	userDict, deviceToUserDict = loadUsers(args.user_map)
@@ -34,6 +43,45 @@ def main():
 	userList = sortUsers(userDict)
 
 	saveReport(userList, args.output_file)
+
+def printReport(logDir, macList, startTime, endTime):
+	# x [Bytes]
+	# x/1024 [KiB]
+	# x/1024/1024 [MiB]
+
+	onPeak = 0
+	offPeak = 0
+
+	totalOn = 0
+	totalOff = 0
+
+	if len(macList) < 0:
+		print('Please provice a comma-separated list of macs using -d')
+		exit(1)
+	if startTime < 0 or endTime < 0:
+		print('Please set a start and end time with -s and -e')
+		exit(1)
+	else:
+		deviceList = loadDeviceData(logDir, startTime, endTime)
+
+		for mac in macList:
+			for dev in deviceList:
+				if dev.mac == mac:
+					onPeak += dev.onPeak
+					offPeak += dev.offPeak
+
+					totalOn += dev.onPeak
+					totalOff += dev.offPeak
+
+			print('MAC: ' + mac)
+			print('On-Peak: ' + str(round(onPeak/1024/1024, 2)) + ' MiB')
+			print('Off-Peak: ' + str(round(offPeak/1024/1024, 2)) + ' MiB\n')
+			onPeak = 0;
+			offPeak = 0;
+
+		print('TOTAL:')
+		print('On-Peak: ' + str(round(totalOn/1024/1024, 2)) + ' MiB')
+		print('Off-Peak: ' + str(round(totalOff/1024/1024, 2)) + ' MiB\n')
 
 class Device:
 	def __init__(self, mac):
@@ -226,10 +274,14 @@ def loadDeviceData(deviceLogDir, start, end):
 		print('Log directory not found!')
 		exit(-1)
 		return deviceList
+		exit(0)
 
 	fileList = [f for f in listdir(deviceLogDir) if isfile(join(deviceLogDir, f))]
 
 	for deviceLog in fileList:
+		sys.stdout.write('.')
+		sys.stdout.flush()
+
 		mac = getMacFromFileName(deviceLog)
 		device = Device(mac)
 
@@ -271,6 +323,8 @@ def loadDeviceData(deviceLogDir, start, end):
 						device.onPeak += delta
 
 		deviceList.append(device)
+
+	print('\n')
 
 	return deviceList
 
