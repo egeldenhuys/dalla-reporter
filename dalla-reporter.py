@@ -27,7 +27,7 @@ def main():
 
 	args = parser.parse_args()
 
-	deviceList = loadDeviceData(args.log_directory, 1501538400, 10000000000000)
+	deviceList = loadDeviceData(args.log_directory, 1504130400, 10000000000000)
 	userDict, deviceToUserDict = loadUsers(args.user_map)
 
 	associateDevicesToUser(deviceList, userDict, deviceToUserDict)
@@ -161,7 +161,7 @@ def associateDevicesToUser(deviceList, userDict, deviceToUserDict):
 			userDict['UNKNOWN'].onPeak += device.onPeak
 
 	# for key, value in userDict.items():
-	# 	print(value.onPeak)
+	#	print(value.onPeak)
 
 '''
 Load Users:
@@ -206,8 +206,8 @@ def loadUsers(userMapFile):
 		# print(row[1])
 
 	# for key, value in macToUserMap.items():
-	# 	print(key)
-	# 	print(value)
+	#	print(key)
+	#	print(value)
 
 	return userDict, macToUserMap
 
@@ -236,42 +236,45 @@ def loadDeviceData(deviceLogDir, start, end):
 		initial = True
 		prevTotalBytes = 0
 
-		with open(deviceLogDir + '/' + deviceLog, 'r') as csvfile:
-			inputFile = csv.reader(csvfile, delimiter=',', skipinitialspace=True)
+		try:
+			with open(deviceLogDir + '/' + deviceLog, 'r') as csvfile:
+				print(deviceLog)
+				inputFile = csv.reader(csvfile, delimiter=',', skipinitialspace=True)
 
-			# Skip header
-			for row in inputFile:
-				if initial:
-					initial = False
-					continue
-				# 0 = time stamp
-				# 1 = total Bytes
+				# Skip header
+				for row in inputFile:
+					if initial:
+						initial = False
+						continue
+					# 0 = time stamp
+					# 1 = total Bytes
 
 
 
-				local = time.localtime(int(row[0]))
-				delta = int(row[1]) - prevTotalBytes
+					local = time.localtime(int(row[0]))
+					delta = int(row[1]) - prevTotalBytes
 
-				if delta < 0:
-					# print('Negative Delta')
-					# print(delta)
-					# print('Correcting to')
-					# print(int(row[1]))
+					if delta < 0:
+						# print('Negative Delta')
+						# print(delta)
+						# print('Correcting to')
+						# print(int(row[1]))
 
-					delta = int(row[1])
-					prevTotalBytes = int(row[1])
+						delta = int(row[1])
+						prevTotalBytes = int(row[1])
 
-				else:
-					prevTotalBytes = int(row[1])
-
-				if int(row[0]) > start and int(row[0]) < end:
-					if (local.tm_hour < 6):
-						device.offPeak += delta
 					else:
-						device.onPeak += delta
+						prevTotalBytes = int(row[1])
 
-		deviceList.append(device)
+					if int(row[0]) > start and int(row[0]) < end:
+						if (local.tm_hour < 6):
+							device.offPeak += delta
+						else:
+							device.onPeak += delta
 
+		except:
+			deviceList.append(device)
+	
 	return deviceList
 
 main()
@@ -313,16 +316,16 @@ Save Report:
 # Open each device csv file
 # Start at first row, read until end
 # Calculate the delta.
-# 	If delta is negative, set delta = 0 for that row
+#	If delta is negative, set delta = 0 for that row
 # Add the delta to a running counter for that file
 
 # Use a Dict:
-# 	MAC = Cumulative delta
+#	MAC = Cumulative delta
 
 # LOAD USER MAP
 # USER:
 #	- Name
-# 	- Devices[]
+#	- Devices[]
 
 # SAVE SUMMARY
 # user -> [Mac...]
